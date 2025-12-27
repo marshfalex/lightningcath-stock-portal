@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { stockList, materialFamilies, StockItem } from '@/data/stockList';
+import { stockList, materialFamilies, productCategories, StockItem, ProductCategory } from '@/data/stockList';
 
 interface StockListProps {
   onMaterialSelect?: (material: StockItem) => void;
@@ -11,41 +11,67 @@ interface StockListProps {
 export default function StockList({ onMaterialSelect, selectedMaterials = [] }: StockListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFamily, setFilterFamily] = useState<string>('');
+  const [filterCategory, setFilterCategory] = useState<ProductCategory | ''>('');
 
   const filteredStock = useMemo(() => {
     return stockList.filter(item => {
-      const matchesSearch = 
+      const matchesSearch =
         item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.materialFamily.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.notes.toLowerCase().includes(searchTerm.toLowerCase());
-      
+        item.notes.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.id.toLowerCase().includes(searchTerm.toLowerCase());
+
       const matchesFamily = !filterFamily || item.materialFamily === filterFamily;
-      
-      return matchesSearch && matchesFamily;
+      const matchesCategory = !filterCategory || item.category === filterCategory;
+
+      return matchesSearch && matchesFamily && matchesCategory;
     });
-  }, [searchTerm, filterFamily]);
+  }, [searchTerm, filterFamily, filterCategory]);
 
   const isSelected = (material: StockItem) => {
     return selectedMaterials.some(
-      selected => selected.description === material.description && 
-                  selected.materialFamily === material.materialFamily
+      selected => selected.id === material.id
     );
+  };
+
+  const getQuantityBadge = (quantity: number | string) => {
+    if (quantity === "Coming Soon!") {
+      return <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>Coming Soon!</span>;
+    }
+    const numQty = typeof quantity === 'number' ? quantity : parseInt(quantity as string);
+    if (numQty === 0) {
+      return <span className="badge" style={{ background: '#fee2e2', color: '#991b1b' }}>Out of Stock</span>;
+    }
+    if (numQty < 50) {
+      return <span className="badge" style={{ background: '#fed7aa', color: '#9a3412' }}>Low Stock ({numQty})</span>;
+    }
+    return <span className="badge badge-success">In Stock ({numQty})</span>;
   };
 
   return (
     <div className="card">
       <h2>Stock List</h2>
-      
+
       <div className="search-bar">
         <input
           type="text"
-          placeholder="Search by material, description, or notes..."
+          placeholder="Search by product ID, material, description, or notes..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
       <div className="filter-group">
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value as ProductCategory | '')}
+        >
+          <option value="">All Categories</option>
+          {productCategories.map(category => (
+            <option key={category} value={category}>{category}</option>
+          ))}
+        </select>
+
         <select
           value={filterFamily}
           onChange={(e) => setFilterFamily(e.target.value)}
@@ -65,29 +91,31 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [] }: 
         <table className="table">
           <thead>
             <tr>
+              <th>ID</th>
+              <th>Category</th>
               <th>Material Family</th>
               <th>Description</th>
-              <th>Notes</th>
+              <th>Quantity</th>
               {onMaterialSelect && <th>Action</th>}
             </tr>
           </thead>
           <tbody>
             {filteredStock.length === 0 ? (
               <tr>
-                <td colSpan={onMaterialSelect ? 4 : 3} style={{ textAlign: 'center', padding: '2rem' }}>
+                <td colSpan={onMaterialSelect ? 6 : 5} style={{ textAlign: 'center', padding: '2rem' }}>
                   No materials found matching your search criteria.
                 </td>
               </tr>
             ) : (
-              filteredStock.map((item, index) => (
-                <tr key={index}>
+              filteredStock.map((item) => (
+                <tr key={item.id}>
+                  <td style={{ fontSize: '0.875rem', color: '#6b7280' }}>{item.id}</td>
                   <td>
-                    <span className="badge badge-primary">{item.materialFamily}</span>
+                    <span className="badge badge-primary">{item.category}</span>
                   </td>
+                  <td style={{ fontSize: '0.875rem' }}>{item.materialFamily}</td>
                   <td>{item.description}</td>
-                  <td style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                    {item.notes || '-'}
-                  </td>
+                  <td>{getQuantityBadge(item.quantity)}</td>
                   {onMaterialSelect && (
                     <td>
                       {isSelected(item) ? (

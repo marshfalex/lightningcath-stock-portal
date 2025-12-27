@@ -12,17 +12,11 @@ export default function Home() {
   const handleMaterialSelect = (material: StockItem) => {
     setSelectedMaterials(prev => {
       // Check if already selected
-      const isAlreadySelected = prev.some(
-        item => item.description === material.description && 
-                item.materialFamily === material.materialFamily
-      );
-      
+      const isAlreadySelected = prev.some(item => item.id === material.id);
+
       if (isAlreadySelected) {
         // Remove if already selected
-        return prev.filter(
-          item => !(item.description === material.description && 
-                   item.materialFamily === material.materialFamily)
-        );
+        return prev.filter(item => item.id !== material.id);
       } else {
         // Add if not selected
         return [...prev, material];
@@ -38,8 +32,26 @@ export default function Home() {
     <main>
       <div className="header">
         <div className="container">
-          <h1>LightningCath Stock List & Lead Time Portal</h1>
-          <p>Search inventory, estimate delivery times, and request quotes for medical device manufacturing</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h1>LightningCath Stock List & Lead Time Portal</h1>
+              <p>Search inventory, estimate delivery times, and request quotes for medical device manufacturing</p>
+            </div>
+            <a
+              href="/admin"
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'white',
+                color: '#1e3a8a',
+                borderRadius: '4px',
+                textDecoration: 'none',
+                fontWeight: '600',
+                fontSize: '0.875rem'
+              }}
+            >
+              Admin Panel →
+            </a>
+          </div>
         </div>
       </div>
 
