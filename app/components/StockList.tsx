@@ -18,11 +18,22 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [] }: 
 
   // Function to load stock data
   const loadStockData = () => {
-    const saved = loadFromLocalStorage();
-    if (saved && saved.length > 0) {
-      setStockList(saved);
-      setIsUsingLiveData(true);
-    } else {
+    try {
+      console.log('[StockList] Loading stock data from localStorage...');
+      const saved = loadFromLocalStorage();
+      console.log('[StockList] Loaded data:', saved ? `${saved.length} items` : 'null');
+
+      if (saved && saved.length > 0) {
+        console.log('[StockList] Using saved data');
+        setStockList(saved);
+        setIsUsingLiveData(true);
+      } else {
+        console.log('[StockList] Using default stock list');
+        setStockList(defaultStockList);
+        setIsUsingLiveData(false);
+      }
+    } catch (error) {
+      console.error('[StockList] Error loading data:', error);
       setStockList(defaultStockList);
       setIsUsingLiveData(false);
     }
@@ -92,20 +103,29 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [] }: 
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <h2 style={{ marginBottom: 0 }}>Stock List</h2>
-        {isUsingLiveData && (
-          <span style={{
-            fontSize: '0.75rem',
-            color: '#10b981',
-            background: '#d1fae5',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '12px',
-            fontWeight: '500'
-          }}>
-            ✓ Live Updates
-          </span>
-        )}
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          {isUsingLiveData && (
+            <span style={{
+              fontSize: '0.75rem',
+              color: '#10b981',
+              background: '#d1fae5',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '12px',
+              fontWeight: '500'
+            }}>
+              ✓ Live Updates
+            </span>
+          )}
+          <button
+            className="button button-secondary"
+            onClick={loadStockData}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
 
       <div className="search-bar">
