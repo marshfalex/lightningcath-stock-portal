@@ -11,14 +11,18 @@ interface NotificationState {
 }
 
 export default function AdminPanel() {
-  const [stockItems, setStockItems] = useState<StockItem[]>(initialStockList);
+  // Initialize from localStorage or fallback to default
+  const [stockItems, setStockItems] = useState<StockItem[]>(() => {
+    const saved = loadFromLocalStorage();
+    return saved && saved.length > 0 ? saved : initialStockList;
+  });
   const [editingItem, setEditingItem] = useState<StockItem | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [notification, setNotification] = useState<NotificationState | null>(null);
   const [undoStack, setUndoStack] = useState<StockItem[][]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isInitialMount = useRef(true);
+  const hasLoadedInitialData = useRef(false);
 
   const [formData, setFormData] = useState<Partial<StockItem>>({
     id: '',
@@ -29,19 +33,17 @@ export default function AdminPanel() {
     quantity: 0
   });
 
-  // Load from localStorage on mount
+  // Show notification on first mount if data was loaded
   useEffect(() => {
-    const saved = loadFromLocalStorage();
-    if (saved && saved.length > 0) {
-      setStockItems(saved);
+    if (hasLocalStorageData() && !hasLoadedInitialData.current) {
       showNotification('Loaded saved inventory data from browser storage', 'info');
+      hasLoadedInitialData.current = true;
     }
-    isInitialMount.current = false;
   }, []);
 
-  // Auto-save to localStorage whenever stockItems changes (but skip initial mount)
+  // Auto-save to localStorage whenever stockItems changes (after initial load)
   useEffect(() => {
-    if (!isInitialMount.current && stockItems.length > 0) {
+    if (hasLoadedInitialData.current && stockItems.length > 0) {
       try {
         saveToLocalStorage(stockItems);
       } catch (error: any) {
