@@ -1,13 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { stockList as initialStockList, StockItem, ProductCategory, productCategories } from '@/data/stockList';
+import { saveToLocalStorage, loadFromLocalStorage, clearLocalStorage, hasLocalStorageData, downloadCSV, parseCSV } from '@/lib/stockUtils';
+import Notification, { NotificationType } from './Notification';
+
+interface NotificationState {
+  message: string;
+  type: NotificationType;
+}
 
 export default function AdminPanel() {
   const [stockItems, setStockItems] = useState<StockItem[]>(initialStockList);
   const [editingItem, setEditingItem] = useState<StockItem | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [notification, setNotification] = useState<NotificationState | null>(null);
+  const [undoStack, setUndoStack] = useState<StockItem[][]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<Partial<StockItem>>({
     id: '',
@@ -17,6 +27,43 @@ export default function AdminPanel() {
     notes: '',
     quantity: 0
   });
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = loadFromLocalStorage();
+    if (saved && saved.length > 0) {
+      setStockItems(saved);
+      showNotification('Loaded saved inventory data from browser storage', 'info');
+    }
+  }, []);
+
+  // Auto-save to localStorage whenever stockItems changes
+  useEffect(() => {
+    if (stockItems.length > 0) {
+      try {
+        saveToLocalStorage(stockItems);
+      } catch (error: any) {
+        showNotification(error.message || 'Failed to auto-save', 'error');
+      }
+    }
+  }, [stockItems]);
+
+  const showNotification = (message: string, type: NotificationType) => {
+    setNotification({ message, type });
+  };
+
+  const saveToUndoStack = () => {
+    setUndoStack(prev => [...prev, stockItems].slice(-10)); // Keep last 10 states
+  };
+
+  const handleUndo = () => {
+    if (undoStack.length > 0) {
+      const previousState = undoStack[undoStack.length - 1];
+      setStockItems(previousState);
+      setUndoStack(prev => prev.slice(0, -1));
+      showNotification('Undone last change', 'success');
+    }
+  };
 
   const filteredItems = stockItems.filter(item =>
     item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,39 +92,34 @@ export default function AdminPanel() {
 
   const handleSave = () => {
     if (!formData.id || !formData.description) {
-      alert('Please fill in required fields (ID and Description)');
+      showNotification('Please fill in required fields (ID and Description)', 'error');
       return;
     }
 
+    saveToUndoStack();
+
     if (isAdding) {
-      // Check if ID already exists
       if (stockItems.some(item => item.id === formData.id)) {
-        alert('An item with this ID already exists');
+        showNotification('An item with this ID already exists', 'error');
         return;
       }
       setStockItems([...stockItems, formData as StockItem]);
+      showNotification(`Added new item: ${formData.id}`, 'success');
     } else if (editingItem) {
       setStockItems(stockItems.map(item =>
         item.id === editingItem.id ? (formData as StockItem) : item
       ));
+      showNotification(`Updated ${formData.id}`, 'success');
     }
 
-    // Reset form
-    setEditingItem(null);
-    setIsAdding(false);
-    setFormData({
-      id: '',
-      category: 'Resin',
-      materialFamily: '',
-      description: '',
-      notes: '',
-      quantity: 0
-    });
+    handleCancel();
   };
 
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this item?')) {
+      saveToUndoStack();
       setStockItems(stockItems.filter(item => item.id !== id));
+      showNotification(`Deleted ${id}`, 'success');
     }
   };
 
@@ -98,6 +140,12 @@ export default function AdminPanel() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleQuantityUpdate = (itemId: string, newQuantity: number | string) => {
+    setStockItems(stockItems.map(item =>
+      item.id === itemId ? { ...item, quantity: newQuantity } : item
+    ));
+  };
+
   const handleExportJSON = () => {
     const dataStr = JSON.stringify(stockItems, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -106,315 +154,479 @@ export default function AdminPanel() {
     link.href = url;
     link.download = `lightningcath-stock-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
+    showNotification('JSON exported successfully', 'success');
   };
 
+  const handleExportCSV = () => {
+    downloadCSV(stockItems, `lightningcath-stock-${new Date().toISOString().split('T')[0]}.csv`);
+    showNotification('CSV exported successfully', 'success');
+  };
+
+  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csvText = e.target?.result as string;
+        const importedItems = parseCSV(csvText);
+
+        saveToUndoStack();
+
+        // Merge or replace logic
+        const existingIds = new Set(stockItems.map(item => item.id));
+        const newItems = importedItems.filter(item => !existingIds.has(item.id));
+        const updatedItems = stockItems.map(existing => {
+          const imported = importedItems.find(imp => imp.id === existing.id);
+          return imported || existing;
+        });
+
+        setStockItems([...updatedItems, ...newItems]);
+        showNotification(`Imported ${importedItems.length} items from CSV`, 'success');
+      } catch (error) {
+        showNotification('Failed to import CSV. Please check the file format.', 'error');
+      }
+    };
+    reader.readAsText(file);
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleResetToDefaults = () => {
+    if (confirm('Are you sure you want to reset to default stock list? This will clear all your changes.')) {
+      saveToUndoStack();
+      setStockItems(initialStockList);
+      clearLocalStorage();
+      showNotification('Reset to default stock list', 'warning');
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+    showNotification('Opening print dialog...', 'info');
+  };
+
+  const getStockStats = () => {
+    const total = stockItems.length;
+    const inStock = stockItems.filter(item => typeof item.quantity === 'number' && item.quantity > 0).length;
+    const lowStock = stockItems.filter(item => typeof item.quantity === 'number' && item.quantity > 0 && item.quantity < 50).length;
+    const outOfStock = stockItems.filter(item => typeof item.quantity === 'number' && item.quantity === 0).length;
+    const comingSoon = stockItems.filter(item => item.quantity === 'Coming Soon!').length;
+
+    return { total, inStock, lowStock, outOfStock, comingSoon };
+  };
+
+  const stats = getStockStats();
+
   return (
-    <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2>Admin Panel - Stock Management</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="button" onClick={handleAdd}>
-            + Add New Item
-          </button>
-          <button className="button button-secondary" onClick={handleExportJSON}>
-            Export JSON
-          </button>
-        </div>
-      </div>
-
-      <div className="search-bar" style={{ marginBottom: '1rem' }}>
-        <input
-          type="text"
-          placeholder="Search by ID, description, or material family..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+    <>
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
         />
-      </div>
-
-      <div style={{ marginBottom: '1rem', color: '#6b7280' }}>
-        Total Items: {stockItems.length} | Showing: {filteredItems.length}
-      </div>
-
-      {(isAdding || editingItem) && (
-        <div style={{
-          background: '#f9fafb',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          marginBottom: '1.5rem',
-          border: '2px solid #3b82f6'
-        }}>
-          <h3 style={{ marginBottom: '1rem', color: '#1e3a8a' }}>
-            {isAdding ? 'Add New Item' : `Edit Item: ${editingItem?.id}`}
-          </h3>
-
-          <div className="grid grid-2">
-            <div className="input-group">
-              <label>ID *</label>
-              <input
-                type="text"
-                value={formData.id || ''}
-                onChange={(e) => handleInputChange('id', e.target.value)}
-                disabled={!isAdding}
-                placeholder="e.g., resin-001"
-              />
-            </div>
-
-            <div className="input-group">
-              <label>Category *</label>
-              <select
-                value={formData.category || 'Resin'}
-                onChange={(e) => handleInputChange('category', e.target.value as ProductCategory)}
-              >
-                {productCategories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="input-group">
-              <label>Material Family *</label>
-              <input
-                type="text"
-                value={formData.materialFamily || ''}
-                onChange={(e) => handleInputChange('materialFamily', e.target.value)}
-                placeholder="e.g., Pebax, Nylon, etc."
-              />
-            </div>
-
-            <div className="input-group">
-              <label>Quantity</label>
-              <input
-                type="text"
-                value={formData.quantity?.toString() || '0'}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  handleInputChange('quantity', val === 'Coming Soon!' ? val : (isNaN(parseInt(val)) ? 0 : parseInt(val)));
-                }}
-                placeholder="Number or 'Coming Soon!'"
-              />
-            </div>
-          </div>
-
-          <div className="input-group">
-            <label>Description *</label>
-            <textarea
-              value={formData.description || ''}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              rows={2}
-              placeholder="Full product description"
-            />
-          </div>
-
-          <div className="input-group">
-            <label>Notes</label>
-            <textarea
-              value={formData.notes || ''}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
-              rows={2}
-              placeholder="Additional notes or comments"
-            />
-          </div>
-
-          {/* Category-specific fields */}
-          {formData.category === 'FEP Heat Shrink' && (
-            <div className="grid grid-2">
-              <div className="input-group">
-                <label>Exp ID (MIN)</label>
-                <input
-                  type="text"
-                  value={formData.expIdMin || ''}
-                  onChange={(e) => handleInputChange('expIdMin', e.target.value)}
-                  placeholder='e.g., 0.068"'
-                />
-              </div>
-              <div className="input-group">
-                <label>Rec ID (MAX)</label>
-                <input
-                  type="text"
-                  value={formData.recIdMax || ''}
-                  onChange={(e) => handleInputChange('recIdMax', e.target.value)}
-                  placeholder='e.g., 0.044"'
-                />
-              </div>
-              <div className="input-group">
-                <label>Rec Wall</label>
-                <input
-                  type="text"
-                  value={formData.recWall || ''}
-                  onChange={(e) => handleInputChange('recWall', e.target.value)}
-                  placeholder='e.g., 0.008"'
-                />
-              </div>
-              <div className="input-group">
-                <label>Shrink Ratio</label>
-                <input
-                  type="text"
-                  value={formData.shrinkRatio || ''}
-                  onChange={(e) => handleInputChange('shrinkRatio', e.target.value)}
-                  placeholder="e.g., 1.6:1"
-                />
-              </div>
-              <div className="input-group">
-                <label>Length</label>
-                <input
-                  type="text"
-                  value={formData.length || ''}
-                  onChange={(e) => handleInputChange('length', e.target.value)}
-                  placeholder='e.g., 72"'
-                />
-              </div>
-            </div>
-          )}
-
-          {formData.category === 'Single Lumen Extrusions' && (
-            <div className="grid grid-2">
-              <div className="input-group">
-                <label>Material</label>
-                <input
-                  type="text"
-                  value={formData.material || ''}
-                  onChange={(e) => handleInputChange('material', e.target.value)}
-                  placeholder="e.g., Pebax 72D Natural"
-                />
-              </div>
-              <div className="input-group">
-                <label>ID Spec</label>
-                <input
-                  type="text"
-                  value={formData.id_spec || ''}
-                  onChange={(e) => handleInputChange('id_spec', e.target.value)}
-                  placeholder='e.g., 0.086" ± .001"'
-                />
-              </div>
-              <div className="input-group">
-                <label>Wall Thickness (WT)</label>
-                <input
-                  type="text"
-                  value={formData.wt || ''}
-                  onChange={(e) => handleInputChange('wt', e.target.value)}
-                  placeholder='e.g., 0.005" ± .0005"'
-                />
-              </div>
-              <div className="input-group">
-                <label>OD (ref)</label>
-                <input
-                  type="text"
-                  value={formData.odRef || ''}
-                  onChange={(e) => handleInputChange('odRef', e.target.value)}
-                  placeholder='e.g., 0.096" (ref)'
-                />
-              </div>
-              <div className="input-group">
-                <label>Length</label>
-                <input
-                  type="text"
-                  value={formData.length || ''}
-                  onChange={(e) => handleInputChange('length', e.target.value)}
-                  placeholder='e.g., 66" + 1" - 0"'
-                />
-              </div>
-            </div>
-          )}
-
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-            <button className="button" onClick={handleSave}>
-              Save
-            </button>
-            <button className="button button-secondary" onClick={handleCancel}>
-              Cancel
-            </button>
-          </div>
-        </div>
       )}
 
-      <div style={{ overflowX: 'auto' }}>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Category</th>
-              <th>Material Family</th>
-              <th>Description</th>
-              <th>Quantity</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredItems.length === 0 ? (
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <h2 style={{ marginBottom: '0.5rem' }}>Admin Panel - Stock Management</h2>
+            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+              <span>📦 Total: {stats.total}</span>
+              <span>✅ In Stock: {stats.inStock}</span>
+              <span>⚠️ Low: {stats.lowStock}</span>
+              <span>❌ Out: {stats.outOfStock}</span>
+              <span>🔜 Coming: {stats.comingSoon}</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button className="button" onClick={handleAdd}>
+              + Add New
+            </button>
+            <button
+              className="button button-secondary"
+              onClick={handleUndo}
+              disabled={undoStack.length === 0}
+            >
+              ↶ Undo
+            </button>
+            <button className="button button-secondary" onClick={handlePrint}>
+              🖨️ Print
+            </button>
+          </div>
+        </div>
+
+        {/* Import/Export Section */}
+        <div style={{
+          background: '#f9fafb',
+          padding: '1rem',
+          borderRadius: '8px',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          gap: '0.5rem',
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
+          <strong style={{ marginRight: '0.5rem' }}>Import/Export:</strong>
+          <button className="button" onClick={handleExportCSV}>
+            📊 Export CSV
+          </button>
+          <button className="button" onClick={handleExportJSON}>
+            📄 Export JSON
+          </button>
+          <label className="button" style={{ cursor: 'pointer', margin: 0 }}>
+            📥 Import CSV
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleImportCSV}
+              style={{ display: 'none' }}
+            />
+          </label>
+          <button
+            className="button"
+            onClick={handleResetToDefaults}
+            style={{ background: '#dc2626', marginLeft: 'auto' }}
+          >
+            🔄 Reset to Defaults
+          </button>
+        </div>
+
+        <div className="search-bar" style={{ marginBottom: '1rem' }}>
+          <input
+            type="text"
+            placeholder="Search by ID, description, or material family..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div style={{ marginBottom: '1rem', color: '#6b7280' }}>
+          Showing: {filteredItems.length} of {stockItems.length} items
+          {hasLocalStorageData() && (
+            <span style={{ marginLeft: '1rem', color: '#10b981' }}>
+              ✓ Auto-saved to browser
+            </span>
+          )}
+        </div>
+
+        {(isAdding || editingItem) && (
+          <div style={{
+            background: '#f9fafb',
+            padding: '1.5rem',
+            borderRadius: '8px',
+            marginBottom: '1.5rem',
+            border: '2px solid #3b82f6'
+          }}>
+            <h3 style={{ marginBottom: '1rem', color: '#1e3a8a' }}>
+              {isAdding ? 'Add New Item' : `Edit Item: ${editingItem?.id}`}
+            </h3>
+
+            <div className="grid grid-2">
+              <div className="input-group">
+                <label>ID * <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>(e.g., resin-037)</span></label>
+                <input
+                  type="text"
+                  value={formData.id || ''}
+                  onChange={(e) => handleInputChange('id', e.target.value)}
+                  disabled={!isAdding}
+                  placeholder="e.g., resin-037"
+                />
+              </div>
+
+              <div className="input-group">
+                <label>Category *</label>
+                <select
+                  value={formData.category || 'Resin'}
+                  onChange={(e) => handleInputChange('category', e.target.value as ProductCategory)}
+                >
+                  {productCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="input-group">
+                <label>Material Family *</label>
+                <input
+                  type="text"
+                  value={formData.materialFamily || ''}
+                  onChange={(e) => handleInputChange('materialFamily', e.target.value)}
+                  placeholder="e.g., Pebax, Nylon, etc."
+                />
+              </div>
+
+              <div className="input-group">
+                <label>Quantity</label>
+                <input
+                  type="text"
+                  value={formData.quantity?.toString() || '0'}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    handleInputChange('quantity', val === 'Coming Soon!' ? val : (isNaN(parseInt(val)) ? 0 : parseInt(val)));
+                  }}
+                  placeholder="Number or 'Coming Soon!'"
+                />
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label>Description *</label>
+              <textarea
+                value={formData.description || ''}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                rows={2}
+                placeholder="Full product description"
+              />
+            </div>
+
+            <div className="input-group">
+              <label>Notes</label>
+              <textarea
+                value={formData.notes || ''}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                rows={2}
+                placeholder="Additional notes or comments"
+              />
+            </div>
+
+            {/* Category-specific fields */}
+            {formData.category === 'FEP Heat Shrink' && (
+              <div className="grid grid-2">
+                <div className="input-group">
+                  <label>Exp ID (MIN)</label>
+                  <input
+                    type="text"
+                    value={formData.expIdMin || ''}
+                    onChange={(e) => handleInputChange('expIdMin', e.target.value)}
+                    placeholder='e.g., 0.068"'
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Rec ID (MAX)</label>
+                  <input
+                    type="text"
+                    value={formData.recIdMax || ''}
+                    onChange={(e) => handleInputChange('recIdMax', e.target.value)}
+                    placeholder='e.g., 0.044"'
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Rec Wall</label>
+                  <input
+                    type="text"
+                    value={formData.recWall || ''}
+                    onChange={(e) => handleInputChange('recWall', e.target.value)}
+                    placeholder='e.g., 0.008"'
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Shrink Ratio</label>
+                  <input
+                    type="text"
+                    value={formData.shrinkRatio || ''}
+                    onChange={(e) => handleInputChange('shrinkRatio', e.target.value)}
+                    placeholder="e.g., 1.6:1"
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Length</label>
+                  <input
+                    type="text"
+                    value={formData.length || ''}
+                    onChange={(e) => handleInputChange('length', e.target.value)}
+                    placeholder='e.g., 72"'
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.category === 'Single Lumen Extrusions' && (
+              <div className="grid grid-2">
+                <div className="input-group">
+                  <label>Material</label>
+                  <input
+                    type="text"
+                    value={formData.material || ''}
+                    onChange={(e) => handleInputChange('material', e.target.value)}
+                    placeholder="e.g., Pebax 72D Natural"
+                  />
+                </div>
+                <div className="input-group">
+                  <label>ID Spec</label>
+                  <input
+                    type="text"
+                    value={formData.id_spec || ''}
+                    onChange={(e) => handleInputChange('id_spec', e.target.value)}
+                    placeholder='e.g., 0.086" ± .001"'
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Wall Thickness (WT)</label>
+                  <input
+                    type="text"
+                    value={formData.wt || ''}
+                    onChange={(e) => handleInputChange('wt', e.target.value)}
+                    placeholder='e.g., 0.005" ± .0005"'
+                  />
+                </div>
+                <div className="input-group">
+                  <label>OD (ref)</label>
+                  <input
+                    type="text"
+                    value={formData.odRef || ''}
+                    onChange={(e) => handleInputChange('odRef', e.target.value)}
+                    placeholder='e.g., 0.096" (ref)'
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Length</label>
+                  <input
+                    type="text"
+                    value={formData.length || ''}
+                    onChange={(e) => handleInputChange('length', e.target.value)}
+                    placeholder='e.g., 66" + 1" - 0"'
+                  />
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+              <button className="button" onClick={handleSave}>
+                ✓ Save
+              </button>
+              <button className="button button-secondary" onClick={handleCancel}>
+                ✕ Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div style={{ overflowX: 'auto' }} className="print-friendly">
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
-                  No items found.
-                </td>
+                <th>ID</th>
+                <th>Category</th>
+                <th>Material Family</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th className="no-print">Actions</th>
               </tr>
-            ) : (
-              filteredItems.map((item) => (
-                <tr key={item.id} style={{ background: editingItem?.id === item.id ? '#eff6ff' : undefined }}>
-                  <td style={{ fontSize: '0.875rem', color: '#6b7280' }}>{item.id}</td>
-                  <td>
-                    <span className="badge badge-primary">{item.category}</span>
-                  </td>
-                  <td style={{ fontSize: '0.875rem' }}>{item.materialFamily}</td>
-                  <td style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {item.description}
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={item.quantity}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const newQty = val === 'Coming Soon!' ? val : (isNaN(parseInt(val)) ? 0 : parseInt(val));
-                        setStockItems(stockItems.map(i =>
-                          i.id === item.id ? { ...i, quantity: newQty } : i
-                        ));
-                      }}
-                      style={{
-                        width: '100px',
-                        padding: '0.25rem 0.5rem',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px'
-                      }}
-                    />
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        className="button"
-                        onClick={() => handleEdit(item)}
-                        style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="button"
-                        onClick={() => handleDelete(item.id)}
-                        style={{
-                          padding: '0.25rem 0.75rem',
-                          fontSize: '0.875rem',
-                          background: '#dc2626'
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
+            </thead>
+            <tbody>
+              {filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
+                    No items found.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredItems.map((item) => (
+                  <tr key={item.id} style={{ background: editingItem?.id === item.id ? '#eff6ff' : undefined }}>
+                    <td style={{ fontSize: '0.875rem', color: '#6b7280' }}>{item.id}</td>
+                    <td>
+                      <span className="badge badge-primary">{item.category}</span>
+                    </td>
+                    <td style={{ fontSize: '0.875rem' }}>{item.materialFamily}</td>
+                    <td style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {item.description}
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const newQty = val === 'Coming Soon!' ? val : (isNaN(parseInt(val)) ? 0 : parseInt(val));
+                          handleQuantityUpdate(item.id, newQty);
+                        }}
+                        style={{
+                          width: '120px',
+                          padding: '0.25rem 0.5rem',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px'
+                        }}
+                        className="no-print-input"
+                      />
+                      <span className="print-only">{item.quantity}</span>
+                    </td>
+                    <td className="no-print">
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          className="button"
+                          onClick={() => handleEdit(item)}
+                          style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="button"
+                          onClick={() => handleDelete(item.id)}
+                          style={{
+                            padding: '0.25rem 0.75rem',
+                            fontSize: '0.875rem',
+                            background: '#dc2626'
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{
+          marginTop: '2rem',
+          padding: '1rem',
+          background: '#dbeafe',
+          borderRadius: '8px',
+          border: '1px solid #3b82f6'
+        }}>
+          <strong>💡 Pro Tips:</strong>
+          <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.5rem', lineHeight: '1.8' }}>
+            <li>Changes are auto-saved to your browser - no need to click save!</li>
+            <li>Update quantities quickly by clicking directly in the table</li>
+            <li>Export CSV to share with others or keep backups</li>
+            <li>Import CSV to bulk update many items at once</li>
+            <li>Use Undo button if you make a mistake (keeps last 10 changes)</li>
+            <li>Print button creates a clean printer-friendly list</li>
+          </ul>
+        </div>
       </div>
 
-      <div style={{
-        marginTop: '2rem',
-        padding: '1rem',
-        background: '#fef3c7',
-        borderRadius: '8px',
-        border: '1px solid #fbbf24'
-      }}>
-        <strong>Note:</strong> Changes made here are only stored in your browser session.
-        To save permanently, export the JSON and update the stockList.ts file in the codebase.
-      </div>
-    </div>
+      <style jsx global>{`
+        @media print {
+          .no-print {
+            display: none !important;
+          }
+          .header {
+            background: white !important;
+            color: black !important;
+          }
+          .no-print-input {
+            border: none !important;
+            padding: 0 !important;
+          }
+          .print-only {
+            display: inline !important;
+          }
+        }
+        .print-only {
+          display: none;
+        }
+      `}</style>
+    </>
   );
 }
