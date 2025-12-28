@@ -14,13 +14,40 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [] }: 
   const [filterFamily, setFilterFamily] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<ProductCategory | ''>('');
   const [stockList, setStockList] = useState<StockItem[]>(defaultStockList);
+  const [isUsingLiveData, setIsUsingLiveData] = useState(false);
 
-  // Load from localStorage on mount (this will have Amy's admin updates!)
-  useEffect(() => {
+  // Function to load stock data
+  const loadStockData = () => {
     const saved = loadFromLocalStorage();
     if (saved && saved.length > 0) {
       setStockList(saved);
+      setIsUsingLiveData(true);
+    } else {
+      setStockList(defaultStockList);
+      setIsUsingLiveData(false);
     }
+  };
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    loadStockData();
+  }, []);
+
+  // Reload data when page becomes visible (user navigates back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadStockData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', loadStockData);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', loadStockData);
+    };
   }, []);
 
   // Calculate material families dynamically from current stock
@@ -67,7 +94,7 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [] }: 
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h2 style={{ marginBottom: 0 }}>Stock List</h2>
-        {stockList !== defaultStockList && (
+        {isUsingLiveData && (
           <span style={{
             fontSize: '0.75rem',
             color: '#10b981',

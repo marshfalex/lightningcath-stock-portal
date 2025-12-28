@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import AdminPanel from '../components/AdminPanel';
 import Link from 'next/link';
 
-const ADMIN_PASSWORD = 'lightningcath2024'; // Amy can change this
+const ADMIN_PASSWORD = 'lightningcath2024'; // Change this to set a custom password
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -87,28 +87,6 @@ export default function AdminPage() {
                 Log In
               </button>
             </form>
-
-            <div style={{
-              marginTop: '2rem',
-              padding: '1rem',
-              background: '#fef3c7',
-              borderRadius: '8px',
-              fontSize: '0.875rem'
-            }}>
-              <strong>📧 For Amy:</strong>
-              <p style={{ marginTop: '0.5rem', marginBottom: 0 }}>
-                Default password: <code style={{
-                  background: 'white',
-                  padding: '0.25rem 0.5rem',
-                  borderRadius: '4px',
-                  fontFamily: 'monospace'
-                }}>lightningcath2024</code>
-                <br />
-                <small style={{ color: '#92400e' }}>
-                  To change the password, update the ADMIN_PASSWORD variable in app/admin/page.tsx
-                </small>
-              </p>
-            </div>
           </div>
         </div>
       </main>
@@ -147,25 +125,6 @@ export default function AdminPage() {
         </div>
 
         <AdminPanel />
-
-        <div style={{
-          marginTop: '2rem',
-          padding: '1.5rem',
-          background: '#f9fafb',
-          borderRadius: '8px',
-          textAlign: 'center'
-        }}>
-          <h3 style={{ marginBottom: '1rem', color: '#1e3a8a' }}>Quick Tips</h3>
-          <div style={{ textAlign: 'left', maxWidth: '600px', margin: '0 auto' }}>
-            <ul style={{ paddingLeft: '1.5rem', lineHeight: '1.8' }}>
-              <li>Use the search bar to quickly find items by ID, description, or material family</li>
-              <li>Update quantities directly in the table by clicking the quantity field</li>
-              <li>Click "Edit" to modify all details of an item</li>
-              <li>Export your changes as JSON to save them permanently</li>
-              <li>New items must have a unique ID (format: category-number, e.g., resin-037)</li>
-            </ul>
-          </div>
-        </div>
       </div>
     </main>
   );
