@@ -79,7 +79,7 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [] }: 
 
       return matchesSearch && matchesFamily && matchesCategory;
     });
-  }, [searchTerm, filterFamily, filterCategory]);
+  }, [searchTerm, filterFamily, filterCategory, stockList]);
 
   const isSelected = (material: StockItem) => {
     return selectedMaterials.some(
