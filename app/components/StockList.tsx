@@ -7,9 +7,11 @@ import { loadFromLocalStorage } from '@/lib/stockUtils';
 interface StockListProps {
   onMaterialSelect?: (material: StockItem) => void;
   selectedMaterials?: StockItem[];
+  onSelectAll?: () => void;
+  onDeselectAll?: () => void;
 }
 
-export default function StockList({ onMaterialSelect, selectedMaterials = [] }: StockListProps) {
+export default function StockList({ onMaterialSelect, selectedMaterials = [], onSelectAll, onDeselectAll }: StockListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFamily, setFilterFamily] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<ProductCategory | ''>('');
@@ -159,8 +161,41 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [] }: 
         </select>
       </div>
 
-      <div style={{ marginTop: '1rem', marginBottom: '1rem', color: '#6b7280' }}>
-        Showing {filteredStock.length} of {stockList.length} items
+      <div style={{ marginTop: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <span style={{ color: '#6b7280' }}>
+          Showing {filteredStock.length} of {stockList.length} items
+        </span>
+        {onMaterialSelect && filteredStock.length > 0 && (
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              className="button button-secondary"
+              onClick={() => {
+                filteredStock.forEach(item => {
+                  if (!isSelected(item)) {
+                    onMaterialSelect(item);
+                  }
+                });
+              }}
+              style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+            >
+              ✓ Select All ({filteredStock.length})
+            </button>
+            <button
+              className="button button-secondary"
+              onClick={() => {
+                filteredStock.forEach(item => {
+                  if (isSelected(item)) {
+                    onMaterialSelect(item);
+                  }
+                });
+              }}
+              style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+              disabled={selectedMaterials.length === 0}
+            >
+              ✕ Deselect All
+            </button>
+          </div>
+        )}
       </div>
 
       <div style={{ overflowX: 'auto' }}>
@@ -194,17 +229,18 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [] }: 
                   <td>{getQuantityBadge(item.quantity)}</td>
                   {onMaterialSelect && (
                     <td>
-                      {isSelected(item) ? (
-                        <span className="badge badge-success">Selected</span>
-                      ) : (
-                        <button
-                          className="button"
-                          onClick={() => onMaterialSelect(item)}
-                          style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-                        >
-                          Select
-                        </button>
-                      )}
+                      <button
+                        className="button"
+                        onClick={() => onMaterialSelect(item)}
+                        style={{
+                          padding: '0.5rem 1rem',
+                          fontSize: '0.875rem',
+                          background: isSelected(item) ? '#dc2626' : '#3b82f6',
+                          minWidth: '100px'
+                        }}
+                      >
+                        {isSelected(item) ? '✕ Remove' : '+ Add'}
+                      </button>
                     </td>
                   )}
                 </tr>
