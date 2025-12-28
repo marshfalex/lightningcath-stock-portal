@@ -18,6 +18,7 @@ export default function AdminPanel() {
   const [notification, setNotification] = useState<NotificationState | null>(null);
   const [undoStack, setUndoStack] = useState<StockItem[][]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isInitialMount = useRef(true);
 
   const [formData, setFormData] = useState<Partial<StockItem>>({
     id: '',
@@ -35,11 +36,12 @@ export default function AdminPanel() {
       setStockItems(saved);
       showNotification('Loaded saved inventory data from browser storage', 'info');
     }
+    isInitialMount.current = false;
   }, []);
 
-  // Auto-save to localStorage whenever stockItems changes
+  // Auto-save to localStorage whenever stockItems changes (but skip initial mount)
   useEffect(() => {
-    if (stockItems.length > 0) {
+    if (!isInitialMount.current && stockItems.length > 0) {
       try {
         saveToLocalStorage(stockItems);
       } catch (error: any) {
