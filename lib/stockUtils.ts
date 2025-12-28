@@ -136,25 +136,39 @@ export function saveToLocalStorage(items: StockItem[]): void {
       timestamp: new Date().toISOString(),
       items: items
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    const jsonData = JSON.stringify(data);
+    localStorage.setItem(STORAGE_KEY, jsonData);
+    console.log(`[localStorage] Saved ${items.length} items to key: ${STORAGE_KEY}`);
+    console.log(`[localStorage] Data size: ${jsonData.length} characters`);
   } catch (error) {
-    console.error('Failed to save to localStorage:', error);
+    console.error('[localStorage] Failed to save:', error);
     throw new Error('Failed to save changes. Storage might be full.');
   }
 }
 
 export function loadFromLocalStorage(): StockItem[] | null {
   try {
+    console.log(`[localStorage] Attempting to load from key: ${STORAGE_KEY}`);
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return null;
 
+    if (!stored) {
+      console.log('[localStorage] No data found in storage');
+      return null;
+    }
+
+    console.log(`[localStorage] Found data, size: ${stored.length} characters`);
     const data = JSON.parse(stored);
+    console.log(`[localStorage] Parsed data, version: ${data.version}`);
+
     if (data.version === STORAGE_VERSION) {
+      console.log(`[localStorage] Version match! Returning ${data.items.length} items`);
       return data.items;
     }
+
+    console.log(`[localStorage] Version mismatch: ${data.version} !== ${STORAGE_VERSION}`);
     return null;
   } catch (error) {
-    console.error('Failed to load from localStorage:', error);
+    console.error('[localStorage] Failed to load:', error);
     return null;
   }
 }
