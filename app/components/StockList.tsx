@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { stockList, materialFamilies, productCategories, StockItem, ProductCategory } from '@/data/stockList';
+import { useState, useMemo, useEffect } from 'react';
+import { stockList as defaultStockList, productCategories, StockItem, ProductCategory } from '@/data/stockList';
+import { loadFromLocalStorage } from '@/lib/stockUtils';
 
 interface StockListProps {
   onMaterialSelect?: (material: StockItem) => void;
@@ -12,6 +13,20 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [] }: 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterFamily, setFilterFamily] = useState<string>('');
   const [filterCategory, setFilterCategory] = useState<ProductCategory | ''>('');
+  const [stockList, setStockList] = useState<StockItem[]>(defaultStockList);
+
+  // Load from localStorage on mount (this will have Amy's admin updates!)
+  useEffect(() => {
+    const saved = loadFromLocalStorage();
+    if (saved && saved.length > 0) {
+      setStockList(saved);
+    }
+  }, []);
+
+  // Calculate material families dynamically from current stock
+  const materialFamilies = useMemo(() => {
+    return Array.from(new Set(stockList.map(item => item.materialFamily))).sort();
+  }, [stockList]);
 
   const filteredStock = useMemo(() => {
     return stockList.filter(item => {
@@ -50,7 +65,21 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [] }: 
 
   return (
     <div className="card">
-      <h2>Stock List</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h2 style={{ marginBottom: 0 }}>Stock List</h2>
+        {stockList !== defaultStockList && (
+          <span style={{
+            fontSize: '0.75rem',
+            color: '#10b981',
+            background: '#d1fae5',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '12px',
+            fontWeight: '500'
+          }}>
+            ✓ Live Updates
+          </span>
+        )}
+      </div>
 
       <div className="search-bar">
         <input

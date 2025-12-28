@@ -22,19 +22,27 @@ To change the admin password:
 
 ## ✨ Key Features
 
-### 1. 💾 Auto-Save (Your New Best Friend!)
+### 1. 💾 Auto-Save & Live Updates (Your New Best Friend!)
 
-**No more lost work!** Every change you make is automatically saved to your browser.
+**No more lost work!** Every change you make is automatically saved AND instantly visible to customers!
 
-- Changes save instantly when you update quantities
-- Data persists even if you close the browser
-- See "✓ Auto-saved to browser" indicator
-- Works offline - no internet needed!
+- ✅ Changes save instantly when you update quantities
+- ✅ **Customers see updates immediately** - no PDF upload needed!
+- ✅ Data persists even if you close the browser
+- ✅ See "✓ Auto-saved to browser" in admin panel
+- ✅ See "✓ Live Updates" badge on customer page
+- ✅ Works offline - no internet needed!
 
-**Important:** Changes are saved to YOUR browser. To share with others or make permanent:
-- Export CSV/JSON and save the file
-- Import the file on other devices
-- Or update the code file `/data/stockList.ts`
+**How it works:**
+1. You update a quantity in the admin panel → Auto-saved to browser storage
+2. Customers visit the stock page → They see YOUR latest updates automatically!
+3. Updates work on the same computer/device (browser localStorage)
+
+**For multiple devices:**
+If you want the same updates on your phone/tablet:
+- Export CSV from your computer
+- Import CSV on your phone/tablet
+- Now both devices have the same data!
 
 ---
 
