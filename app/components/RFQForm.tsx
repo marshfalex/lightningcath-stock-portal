@@ -76,14 +76,14 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.companyName || !formData.contactName || !formData.email || !formData.phone) {
       alert('Please fill in all required customer information fields.');
       return;
     }
 
-    if (formData.selectedMaterials.length === 0) {
+    if (selectedMaterials.length === 0) {
       alert('Please select at least one material from the stock list.');
       return;
     }
@@ -101,7 +101,7 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
 
     // Generate PDF
     generateRFQPDF(updatedFormData);
-    
+
     // Show success message
     alert('RFQ PDF generated successfully! The file has been downloaded.');
   };
