@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     // Send email to Amy with the RFQ PDF attached
     const amyEmail = await resend.emails.send({
       from: 'LightningCath Portal <onboarding@resend.dev>',
-      to: 'amy.oneil@lightningcath.com',
+      to: 'marshfalex@gmail.com', // TODO: Change back to amy.oneil@lightningcath.com when ready for production
       subject: `New RFQ from ${customerData.companyName}`,
       html: `
         <h2>New Request for Quote</h2>
