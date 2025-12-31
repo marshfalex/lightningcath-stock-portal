@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { generateRFQPDF, RFQData } from '@/lib/pdfGenerator';
+import { generateRFQPDF, generateRFQPDFBase64, RFQData } from '@/lib/pdfGenerator';
 import { StockItem } from '@/data/stockList';
 import { serviceTypes } from '@/lib/leadTime';
 
@@ -31,6 +31,7 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
   });
 
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     if (field.startsWith('specifications.')) {
@@ -74,7 +75,7 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validation
@@ -93,24 +94,87 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
       return;
     }
 
-    // Update selected materials in form data
-    const updatedFormData = {
-      ...formData,
-      selectedMaterials: selectedMaterials
-    };
+    setIsSubmitting(true);
 
-    // Generate PDF
-    generateRFQPDF(updatedFormData);
+    try {
+      // Update selected materials in form data
+      const updatedFormData = {
+        ...formData,
+        selectedMaterials: selectedMaterials
+      };
 
-    // Show success message
-    alert('RFQ PDF generated successfully! The file has been downloaded.');
+      // Generate PDF as base64 for email
+      const { base64, fileName } = generateRFQPDFBase64(updatedFormData);
+
+      // Send to API
+      const response = await fetch('/api/send-rfq', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pdfBase64: base64,
+          fileName: fileName,
+          customerData: {
+            companyName: formData.companyName,
+            contactName: formData.contactName,
+            email: formData.email,
+            phone: formData.phone,
+            projectName: formData.projectName,
+            quantity: formData.quantity,
+            materialCount: selectedMaterials.length,
+            serviceCount: formData.services.length,
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send RFQ');
+      }
+
+      // Also download PDF locally for customer's records
+      generateRFQPDF(updatedFormData);
+
+      // Show success message
+      alert('✓ RFQ submitted successfully!\n\n✉️ Emails sent to:\n• amy.oneil@lightningcath.com (with your RFQ)\n• ' + formData.email + ' (confirmation copy)\n\nWe will review your quote and respond within 1-2 business days.\n\nA copy has also been downloaded to your device for your records.');
+
+      // Reset form
+      setFormData({
+        companyName: '',
+        contactName: '',
+        email: '',
+        phone: '',
+        projectName: '',
+        quantity: '',
+        targetDate: '',
+        selectedMaterials: [],
+        services: [],
+        specifications: {
+          innerDiameter: '',
+          outerDiameter: '',
+          length: '',
+          wallThickness: '',
+          other: ''
+        },
+        additionalNotes: ''
+      });
+      setSelectedServiceIds([]);
+
+    } catch (error: any) {
+      console.error('Error submitting RFQ:', error);
+      alert('❌ Error submitting RFQ: ' + error.message + '\n\nPlease try again or contact us directly at amy.oneil@lightningcath.com');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="card">
       <h2>Request for Quote (RFQ)</h2>
       <p style={{ marginBottom: '1.5rem', color: '#6b7280' }}>
-        Fill out the form below to generate a PDF spec sheet with all technical parameters pre-filled.
+        Fill out the form below to submit your RFQ. Your request will be automatically sent to our team at <strong>amy.oneil@lightningcath.com</strong>, and you'll receive a confirmation email with a copy of your RFQ.
       </p>
 
       <form onSubmit={handleSubmit}>
@@ -320,8 +384,13 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
           />
         </div>
 
-        <button type="submit" className="button" style={{ marginTop: '1.5rem' }}>
-          Generate RFQ PDF
+        <button
+          type="submit"
+          className="button"
+          style={{ marginTop: '1.5rem' }}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Sending...' : 'Submit RFQ'}
         </button>
       </form>
     </div>
