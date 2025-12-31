@@ -102,15 +102,15 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
     // Generate PDF
     generateRFQPDF(updatedFormData);
 
-    // Show success message
-    alert('RFQ PDF generated successfully! The file has been downloaded.');
+    // Show success message with instructions
+    alert('✓ RFQ PDF generated successfully!\n\nNext steps:\n1. Check your Downloads folder for the PDF\n2. Email it to: amy.oneil@lightningcath.com\n3. We will review your quote and respond within 1-2 business days');
   };
 
   return (
     <div className="card">
       <h2>Request for Quote (RFQ)</h2>
       <p style={{ marginBottom: '1.5rem', color: '#6b7280' }}>
-        Fill out the form below to generate a PDF spec sheet with all technical parameters pre-filled.
+        Fill out the form below to generate a PDF spec sheet with all technical parameters pre-filled. After generating, email the PDF to <strong>amy.oneil@lightningcath.com</strong> for review.
       </p>
 
       <form onSubmit={handleSubmit}>
