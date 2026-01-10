@@ -172,13 +172,13 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
 
   return (
     <div className="card">
-      <h2>Request for Quote (RFQ)</h2>
-      <p style={{ marginBottom: '1.5rem', color: '#6b7280' }}>
+      <h2 className="card-title">Request for Quote (RFQ)</h2>
+      <p className="card-subtitle">
         Fill out the form below to submit your RFQ. Your request will be automatically sent to our team at <strong>amy.oneil@lightningcath.com</strong>, and you'll receive a confirmation email with a copy of your RFQ.
       </p>
 
       <form onSubmit={handleSubmit}>
-        <h3 style={{ marginBottom: '1rem', color: '#1e3a8a', fontSize: '1.25rem' }}>
+        <h3 className="section-title">
           Customer Information
         </h3>
         
@@ -228,7 +228,7 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
           </div>
         </div>
 
-        <h3 style={{ marginTop: '2rem', marginBottom: '1rem', color: '#1e3a8a', fontSize: '1.25rem' }}>
+        <h3 className="section-title" style={{ marginTop: '3rem' }}>
           Project Details
         </h3>
 
@@ -265,54 +265,50 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
           </div>
         </div>
 
-        <h3 style={{ marginTop: '2rem', marginBottom: '1rem', color: '#1e3a8a', fontSize: '1.25rem' }}>
+        <h3 className="section-title" style={{ marginTop: '3rem' }}>
           Selected Materials ({selectedMaterials.length})
         </h3>
         {selectedMaterials.length === 0 ? (
-          <p style={{ color: '#ef4444', marginBottom: '1rem' }}>
+          <div className="alert alert-error">
             Please select materials from the Stock List above.
-          </p>
+          </div>
         ) : (
-          <ul style={{ marginBottom: '1rem', paddingLeft: '1.5rem' }}>
+          <ul style={{ marginBottom: '2rem', paddingLeft: '1.5rem', color: 'var(--color-text-primary)' }}>
             {selectedMaterials.map((material, index) => (
-              <li key={index} style={{ marginBottom: '0.5rem' }}>
-                <strong>{material.description}</strong> ({material.materialFamily})
+              <li key={index} style={{ marginBottom: '0.75rem' }}>
+                <strong>{material.description}</strong> <span style={{ color: 'var(--color-text-secondary)' }}>({material.materialFamily})</span>
               </li>
             ))}
           </ul>
         )}
 
-        <h3 style={{ marginTop: '2rem', marginBottom: '1rem', color: '#1e3a8a', fontSize: '1.25rem' }}>
+        <h3 className="section-title" style={{ marginTop: '3rem' }}>
           Service Requirements *
         </h3>
-        <div style={{ marginBottom: '1rem' }}>
+        <div className="service-grid" style={{ marginBottom: '2rem' }}>
           {serviceTypes.map(service => (
-            <label
+            <div
               key={service.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                marginBottom: '0.75rem',
-                cursor: 'pointer'
-              }}
+              className={`service-card ${selectedServiceIds.includes(service.id) ? 'selected' : ''}`}
+              onClick={() => handleServiceToggle(service.id)}
             >
-              <input
-                type="checkbox"
-                checked={selectedServiceIds.includes(service.id)}
-                onChange={() => handleServiceToggle(service.id)}
-                style={{ marginRight: '0.5rem', width: '18px', height: '18px' }}
-              />
-              <div>
+              <div className="service-card-header">
+                <input
+                  type="checkbox"
+                  checked={selectedServiceIds.includes(service.id)}
+                  onChange={() => handleServiceToggle(service.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
                 <strong>{service.name}</strong>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
-                  {service.description}
-                </p>
               </div>
-            </label>
+              <p className="service-card-description">
+                {service.description}
+              </p>
+            </div>
           ))}
         </div>
 
-        <h3 style={{ marginTop: '2rem', marginBottom: '1rem', color: '#1e3a8a', fontSize: '1.25rem' }}>
+        <h3 className="section-title" style={{ marginTop: '3rem' }}>
           Technical Specifications
         </h3>
 
@@ -373,7 +369,7 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
           />
         </div>
 
-        <div className="input-group">
+        <div className="input-group" style={{ marginTop: '2rem' }}>
           <label htmlFor="additionalNotes">Additional Notes</label>
           <textarea
             id="additionalNotes"
@@ -387,10 +383,10 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
         <button
           type="submit"
           className="button"
-          style={{ marginTop: '1.5rem' }}
+          style={{ marginTop: '3rem', width: '100%' }}
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Sending...' : 'Submit RFQ'}
+          {isSubmitting ? '⏳ Sending...' : '📤 Submit RFQ'}
         </button>
       </form>
     </div>

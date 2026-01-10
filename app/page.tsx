@@ -32,97 +32,81 @@ export default function Home() {
 
   return (
     <main>
-      <div className="header">
-        <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
-              <div style={{ position: 'relative', width: '180px', height: '60px' }}>
-                <Image
-                  src="/images/lightningcath-logo.png"
-                  alt="LightningCath Logo"
-                  fill
-                  style={{ objectFit: 'contain' }}
-                  priority
-                  onError={(e) => {
-                    // Hide image if it fails to load
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-              <div>
-                <h1>Stock Portal</h1>
-                <p>Professional inventory management and RFQ system</p>
-              </div>
+      <header className="header">
+        <div className="header-content">
+          <div className="header-brand">
+            <div style={{ position: 'relative', width: '180px', height: '48px' }}>
+              <Image
+                src="/images/lightningcath-logo.png"
+                alt="LightningCath Logo"
+                fill
+                style={{ objectFit: 'contain' }}
+                priority
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
-            <a
-              href="/admin"
-              className="button"
-              style={{
-                background: 'white',
-                color: 'var(--color-primary)',
-                boxShadow: 'var(--shadow-md)'
-              }}
-            >
-              Admin Panel →
-            </a>
+            <div>
+              <h1 className="header-title">Stock Portal</h1>
+              <p className="header-subtitle">Professional inventory management and RFQ system</p>
+            </div>
           </div>
+          <a href="/admin" className="button button-secondary">
+            Admin Panel →
+          </a>
         </div>
-      </div>
+      </header>
 
-      <div className="container">
-        <div style={{ marginBottom: '2rem' }}>
-          <StockList 
+      <div className="container" style={{ paddingTop: '8rem' }}>
+        <div style={{ marginBottom: '4rem' }}>
+          <StockList
             onMaterialSelect={handleMaterialSelect}
             selectedMaterials={selectedMaterials}
           />
         </div>
 
         {selectedMaterials.length > 0 && (
-          <div style={{
-            background: 'var(--color-info-bg)',
-            padding: '1.5rem',
-            borderRadius: '12px',
-            marginBottom: '2rem',
-            border: '1px solid var(--color-border)',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <strong style={{ fontSize: '1.1rem', color: 'var(--color-text-primary)' }}>
-                  {selectedMaterials.length} material(s) selected
-                </strong>
-                <p style={{ marginTop: '0.5rem', fontSize: '0.95rem', color: 'var(--color-text-secondary)' }}>
-                  Selected materials will be included in your RFQ submission
-                </p>
+          <div className="selection-banner">
+            <div className="selection-info">
+              <div className="selection-count">
+                {selectedMaterials.length} material{selectedMaterials.length !== 1 ? 's' : ''} selected
               </div>
-              <button
-                className="button button-secondary"
-                onClick={handleClearSelection}
-              >
-                Clear All
-              </button>
+              <div className="selection-description">
+                Selected materials will be included in your RFQ submission
+              </div>
             </div>
+            <button
+              className="button button-ghost"
+              onClick={handleClearSelection}
+            >
+              Clear All
+            </button>
           </div>
         )}
 
-        <div style={{ marginTop: '2rem' }}>
+        <div style={{ marginTop: '4rem' }}>
           <RFQForm selectedMaterials={selectedMaterials} />
         </div>
 
-        <div style={{
-          marginTop: '3rem',
-          padding: '2.5rem',
-          background: 'var(--color-bg-tertiary)',
-          borderRadius: '12px',
+        <div className="card" style={{
+          marginTop: '6rem',
           textAlign: 'center',
-          color: 'var(--color-text-secondary)',
-          border: '1px solid var(--color-border)'
+          padding: '3rem'
         }}>
-          <p style={{ marginBottom: '0.75rem', fontSize: '1.1rem' }}>
-            <strong style={{ color: 'var(--color-text-primary)' }}>Questions about our stock or services?</strong>
+          <p style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+            Questions about our stock or services?
           </p>
-          <p style={{ fontSize: '1rem' }}>
-            Contact us: <a href="mailto:amy.oneil@lightningcath.com" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
+          <p style={{ fontSize: '1rem', color: 'var(--color-text-secondary)' }}>
+            Contact us at{' '}
+            <a
+              href="mailto:amy.oneil@lightningcath.com"
+              style={{
+                color: 'var(--color-primary)',
+                fontWeight: 600,
+                textDecoration: 'none'
+              }}
+            >
               amy.oneil@lightningcath.com
             </a>
           </p>
