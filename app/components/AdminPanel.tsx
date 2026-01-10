@@ -237,30 +237,30 @@ export default function AdminPanel() {
       )}
 
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', flexWrap: 'wrap', gap: '1.5rem' }}>
           <div>
-            <h2 style={{ marginBottom: '0.5rem' }}>Admin Panel - Stock Management</h2>
-            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
-              <span>📦 Total: {stats.total}</span>
-              <span>✅ In Stock: {stats.inStock}</span>
-              <span>⚠️ Low: {stats.lowStock}</span>
-              <span>❌ Out: {stats.outOfStock}</span>
-              <span>🔜 Coming: {stats.comingSoon}</span>
+            <h2 className="card-title" style={{ marginBottom: '1rem' }}>Stock Management</h2>
+            <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+              <span className="badge badge-info">📦 Total: {stats.total}</span>
+              <span className="badge badge-success">✅ In Stock: {stats.inStock}</span>
+              <span className="badge badge-warning">⚠️ Low: {stats.lowStock}</span>
+              <span className="badge badge-error">❌ Out: {stats.outOfStock}</span>
+              <span className="badge badge-info">🔜 Coming: {stats.comingSoon}</span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             <button className="button" onClick={handleAdd}>
               + Add New
             </button>
             <button
-              className="button button-secondary"
+              className="button button-ghost"
               onClick={handleUndo}
               disabled={undoStack.length === 0}
             >
               ↶ Undo
             </button>
-            <button className="button button-secondary" onClick={handlePrint}>
+            <button className="button button-ghost" onClick={handlePrint}>
               🖨️ Print
             </button>
           </div>
@@ -268,23 +268,24 @@ export default function AdminPanel() {
 
         {/* Import/Export Section */}
         <div style={{
-          background: '#f9fafb',
-          padding: '1rem',
-          borderRadius: '8px',
-          marginBottom: '1.5rem',
+          background: 'var(--color-bg-secondary)',
+          padding: '1.5rem',
+          borderRadius: '12px',
+          marginBottom: '2rem',
           display: 'flex',
-          gap: '0.5rem',
+          gap: '0.75rem',
           flexWrap: 'wrap',
-          alignItems: 'center'
+          alignItems: 'center',
+          border: '1px solid var(--color-border-subtle)'
         }}>
-          <strong style={{ marginRight: '0.5rem' }}>Import/Export:</strong>
-          <button className="button" onClick={handleExportCSV}>
+          <strong style={{ marginRight: '0.75rem', color: 'var(--color-text-primary)' }}>Import/Export:</strong>
+          <button className="button button-ghost" onClick={handleExportCSV}>
             📊 Export CSV
           </button>
-          <button className="button" onClick={handleExportJSON}>
+          <button className="button button-ghost" onClick={handleExportJSON}>
             📄 Export JSON
           </button>
-          <label className="button" style={{ cursor: 'pointer', margin: 0 }}>
+          <label className="button button-ghost" style={{ cursor: 'pointer', margin: 0 }}>
             📥 Import CSV
             <input
               ref={fileInputRef}
@@ -295,15 +296,15 @@ export default function AdminPanel() {
             />
           </label>
           <button
-            className="button"
+            className="button button-secondary"
             onClick={handleResetToDefaults}
-            style={{ background: '#dc2626', marginLeft: 'auto' }}
+            style={{ marginLeft: 'auto' }}
           >
             🔄 Reset to Defaults
           </button>
         </div>
 
-        <div className="search-bar" style={{ marginBottom: '1rem' }}>
+        <div className="search-bar" style={{ marginBottom: '2rem' }}>
           <input
             type="text"
             placeholder="Search by ID, description, or material family..."
@@ -312,10 +313,12 @@ export default function AdminPanel() {
           />
         </div>
 
-        <div style={{ marginBottom: '1rem', color: '#6b7280' }}>
-          Showing: {filteredItems.length} of {stockItems.length} items
+        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+            Showing {filteredItems.length} of {stockItems.length} items
+          </span>
           {hasLocalStorageData() && (
-            <span style={{ marginLeft: '1rem', color: '#10b981' }}>
+            <span className="badge badge-success">
               ✓ Auto-saved to browser
             </span>
           )}
@@ -323,13 +326,13 @@ export default function AdminPanel() {
 
         {(isAdding || editingItem) && (
           <div style={{
-            background: '#f9fafb',
-            padding: '1.5rem',
-            borderRadius: '8px',
-            marginBottom: '1.5rem',
-            border: '2px solid #3b82f6'
+            background: 'var(--color-bg-secondary)',
+            padding: '2rem',
+            borderRadius: '12px',
+            marginBottom: '2rem',
+            border: '2px solid var(--color-primary)'
           }}>
-            <h3 style={{ marginBottom: '1rem', color: '#1e3a8a' }}>
+            <h3 className="section-title">
               {isAdding ? 'Add New Item' : `Edit Item: ${editingItem?.id}`}
             </h3>
 
@@ -502,18 +505,18 @@ export default function AdminPanel() {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '2rem' }}>
               <button className="button" onClick={handleSave}>
                 ✓ Save
               </button>
-              <button className="button button-secondary" onClick={handleCancel}>
+              <button className="button button-ghost" onClick={handleCancel}>
                 ✕ Cancel
               </button>
             </div>
           </div>
         )}
 
-        <div style={{ overflowX: 'auto' }} className="print-friendly">
+        <div className="table-container print-friendly">
           <table className="table">
             <thead>
               <tr>
@@ -534,10 +537,10 @@ export default function AdminPanel() {
                 </tr>
               ) : (
                 filteredItems.map((item) => (
-                  <tr key={item.id} style={{ background: editingItem?.id === item.id ? '#eff6ff' : undefined }}>
-                    <td style={{ fontSize: '0.875rem', color: '#6b7280' }}>{item.id}</td>
+                  <tr key={item.id} style={{ background: editingItem?.id === item.id ? 'var(--color-info-bg)' : undefined }}>
+                    <td style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>{item.id}</td>
                     <td>
-                      <span className="badge badge-primary">{item.category}</span>
+                      <span className="badge badge-info">{item.category}</span>
                     </td>
                     <td style={{ fontSize: '0.875rem' }}>{item.materialFamily}</td>
                     <td style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -554,9 +557,11 @@ export default function AdminPanel() {
                         }}
                         style={{
                           width: '120px',
-                          padding: '0.25rem 0.5rem',
-                          border: '1px solid #ddd',
-                          borderRadius: '4px'
+                          padding: '0.5rem',
+                          border: '1px solid var(--color-border)',
+                          borderRadius: '8px',
+                          background: 'var(--color-bg-primary)',
+                          color: 'var(--color-text-primary)'
                         }}
                         className="no-print-input"
                       />
@@ -565,20 +570,14 @@ export default function AdminPanel() {
                     <td className="no-print">
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button
-                          className="button"
+                          className="button button-ghost"
                           onClick={() => handleEdit(item)}
-                          style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
                         >
                           Edit
                         </button>
                         <button
-                          className="button"
+                          className="button button-secondary"
                           onClick={() => handleDelete(item.id)}
-                          style={{
-                            padding: '0.25rem 0.75rem',
-                            fontSize: '0.875rem',
-                            background: '#dc2626'
-                          }}
                         >
                           Delete
                         </button>
