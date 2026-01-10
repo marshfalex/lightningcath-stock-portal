@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { stockList as defaultStockList, productCategories, StockItem, ProductCategory } from '@/data/stockList';
 import { loadFromLocalStorage } from '@/lib/stockUtils';
+import StockListRow from './StockListRow';
 
 interface StockListProps {
   onMaterialSelect?: (material: StockItem) => void;
@@ -89,19 +90,26 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [], on
     );
   };
 
-  const getQuantityBadge = (quantity: number | string) => {
-    if (quantity === "Coming Soon!") {
-      return <span className="badge badge-warning">Coming Soon!</span>;
-    }
-    const numQty = typeof quantity === 'number' ? quantity : parseInt(quantity as string);
-    if (numQty === 0) {
-      return <span className="badge badge-error">Out of Stock</span>;
-    }
-    if (numQty < 50) {
-      return <span className="badge badge-warning">Low Stock ({numQty})</span>;
-    }
-    return <span className="badge badge-success">In Stock ({numQty})</span>;
-  };
+  // Simple virtualization - only render visible rows
+  const [visibleRange, setVisibleRange] = useState({ start: 0, end: 20 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const ROW_HEIGHT = 80;
+  const BUFFER = 5;
+
+  const handleScroll = useCallback(() => {
+    if (!containerRef.current) return;
+    const scrollTop = containerRef.current.scrollTop;
+    const start = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER);
+    const end = Math.min(
+      filteredStock.length,
+      start + Math.ceil(containerRef.current.clientHeight / ROW_HEIGHT) + BUFFER * 2
+    );
+    setVisibleRange({ start, end });
+  }, [filteredStock.length]);
+
+  const visibleItems = useMemo(() => {
+    return filteredStock.slice(visibleRange.start, visibleRange.end);
+  }, [filteredStock, visibleRange]);
 
   return (
     <div className="card">
@@ -189,50 +197,59 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [], on
       </div>
 
       <div className="table-container">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Category</th>
-              <th>Material Family</th>
-              <th>Description</th>
-              <th>Quantity</th>
-              {onMaterialSelect && <th>Action</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStock.length === 0 ? (
-              <tr>
-                <td colSpan={onMaterialSelect ? 6 : 5} style={{ textAlign: 'center', padding: '2rem' }}>
-                  No materials found matching your search criteria.
-                </td>
-              </tr>
-            ) : (
-              filteredStock.map((item) => (
-                <tr key={item.id}>
-                  <td style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>{item.id}</td>
-                  <td>
-                    <span className="badge badge-info">{item.category}</span>
-                  </td>
-                  <td style={{ fontSize: '0.875rem' }}>{item.materialFamily}</td>
-                  <td>{item.description}</td>
-                  <td>{getQuantityBadge(item.quantity)}</td>
-                  {onMaterialSelect && (
-                    <td>
-                      <button
-                        className={isSelected(item) ? 'button button-secondary' : 'button'}
-                        onClick={() => onMaterialSelect(item)}
-                        style={{ minWidth: '100px' }}
-                      >
-                        {isSelected(item) ? '✕ Remove' : '+ Add'}
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <div style={{
+          display: 'flex',
+          borderBottom: '1px solid var(--color-border)',
+          background: 'var(--color-bg-input)',
+          fontWeight: 600,
+          fontSize: '0.75rem',
+          color: 'var(--color-text-secondary)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+        }}>
+          <div style={{ flex: '0 0 120px', padding: '1rem 1.25rem' }}>ID</div>
+          <div style={{ flex: '0 0 150px', padding: '1rem 1.25rem' }}>Category</div>
+          <div style={{ flex: '0 0 200px', padding: '1rem 1.25rem' }}>Material Family</div>
+          <div style={{ flex: '1 1 auto', padding: '1rem 1.25rem' }}>Description</div>
+          <div style={{ flex: '0 0 180px', padding: '1rem 1.25rem' }}>Quantity</div>
+          {onMaterialSelect && <div style={{ flex: '0 0 150px', padding: '1rem 1.25rem' }}>Action</div>}
+        </div>
+
+        {filteredStock.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '2rem',
+            color: 'var(--color-text-secondary)',
+            background: 'var(--color-bg-secondary)'
+          }}>
+            No materials found matching your search criteria.
+          </div>
+        ) : (
+          <div
+            ref={containerRef}
+            onScroll={handleScroll}
+            style={{
+              height: Math.min(600, filteredStock.length * ROW_HEIGHT),
+              overflow: 'auto',
+              background: 'var(--color-bg-secondary)',
+              position: 'relative'
+            }}
+          >
+            <div style={{ height: filteredStock.length * ROW_HEIGHT, position: 'relative' }}>
+              <div style={{ position: 'absolute', top: visibleRange.start * ROW_HEIGHT, left: 0, right: 0 }}>
+                {visibleItems.map((item, idx) => (
+                  <StockListRow
+                    key={item.id}
+                    item={item}
+                    isSelected={isSelected(item)}
+                    onSelect={onMaterialSelect}
+                    style={{ height: ROW_HEIGHT }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

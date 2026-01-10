@@ -49,7 +49,7 @@ export default function Home() {
             </div>
             <div>
               <h1 className="header-title">Stock Portal</h1>
-              <p className="header-subtitle">Professional inventory management and RFQ system</p>
+              <p className="header-subtitle">Inventory management and RFQ system</p>
             </div>
           </div>
           <a href="/admin" className="button button-secondary">
