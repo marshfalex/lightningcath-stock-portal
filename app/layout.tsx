@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { ThemeProvider } from './context/ThemeContext'
 
 export const metadata: Metadata = {
-  title: 'LightningCath Stock List & Lead Time Portal',
-  description: 'Search stock inventory, estimate lead times, and request quotes for medical device manufacturing',
+  title: 'LightningCath Stock Portal - Medical Device Manufacturing',
+  description: 'Professional stock inventory management and RFQ system for medical device manufacturing',
 }
 
 export default function RootLayout({
@@ -13,7 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   )
 }

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import AdminPanel from '../components/AdminPanel';
 import Link from 'next/link';
+import { useTheme } from '../context/ThemeContext';
+import Image from 'next/image';
 
 const ADMIN_PASSWORD = 'lightningcath2024'; // Change this to set a custom password
 
@@ -10,6 +12,7 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     // Check if already authenticated in this session
@@ -42,14 +45,30 @@ export default function AdminPage() {
       <main>
         <div className="header">
           <div className="container">
-            <h1>LightningCath Admin Portal</h1>
-            <p>Please log in to access the admin panel</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1rem' }}>
+              <div style={{ position: 'relative', width: '180px', height: '60px' }}>
+                <Image
+                  src="/images/lightningcath-logo.png"
+                  alt="LightningCath Logo"
+                  fill
+                  style={{ objectFit: 'contain' }}
+                  priority
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+              <div>
+                <h1>Admin Portal</h1>
+                <p>Please log in to access the admin panel</p>
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="container">
           <div style={{ marginBottom: '1.5rem' }}>
-            <Link href="/" style={{ color: '#3b82f6', textDecoration: 'underline' }}>
+            <Link href="/" className="button button-secondary">
               ← Back to Stock Portal
             </Link>
           </div>
@@ -67,16 +86,15 @@ export default function AdminPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter admin password"
                   autoFocus
-                  style={{ fontSize: '1rem' }}
                 />
               </div>
 
               {error && (
                 <div style={{
                   padding: '0.75rem',
-                  background: '#fee2e2',
-                  color: '#991b1b',
-                  borderRadius: '4px',
+                  background: 'var(--color-error-bg)',
+                  color: 'var(--color-error-text)',
+                  borderRadius: '8px',
                   marginBottom: '1rem'
                 }}>
                   {error}
@@ -89,6 +107,16 @@ export default function AdminPage() {
             </form>
           </div>
         </div>
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          className="theme-toggle"
+          aria-label="Toggle theme"
+          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
       </main>
     );
   }
@@ -97,19 +125,28 @@ export default function AdminPage() {
     <main>
       <div className="header">
         <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <h1>LightningCath Admin Portal</h1>
-              <p>Manage your stock inventory, update quantities, and add new products</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
+              <div style={{ position: 'relative', width: '180px', height: '60px' }}>
+                <Image
+                  src="/images/lightningcath-logo.png"
+                  alt="LightningCath Logo"
+                  fill
+                  style={{ objectFit: 'contain' }}
+                  priority
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+              <div>
+                <h1>Admin Portal</h1>
+                <p>Manage your stock inventory and add new products</p>
+              </div>
             </div>
             <button
               className="button button-secondary"
               onClick={handleLogout}
-              style={{
-                background: '#6b7280',
-                color: 'white',
-                padding: '0.75rem 1.5rem'
-              }}
             >
               🔒 Logout
             </button>
@@ -119,13 +156,23 @@ export default function AdminPage() {
 
       <div className="container">
         <div style={{ marginBottom: '1.5rem' }}>
-          <Link href="/" style={{ color: '#3b82f6', textDecoration: 'underline' }}>
+          <Link href="/" className="button button-secondary">
             ← Back to Stock Portal
           </Link>
         </div>
 
         <AdminPanel />
       </div>
+
+      {/* Theme Toggle Button */}
+      <button
+        onClick={toggleTheme}
+        className="theme-toggle"
+        aria-label="Toggle theme"
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      >
+        {theme === 'light' ? '🌙' : '☀️'}
+      </button>
     </main>
   );
 }
