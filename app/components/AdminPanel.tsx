@@ -590,24 +590,6 @@ export default function AdminPanel() {
             </tbody>
           </table>
         </div>
-
-        <div style={{
-          marginTop: '2rem',
-          padding: '1rem',
-          background: '#dbeafe',
-          borderRadius: '8px',
-          border: '1px solid #3b82f6'
-        }}>
-          <strong>💡 Pro Tips:</strong>
-          <ul style={{ marginTop: '0.5rem', marginBottom: 0, paddingLeft: '1.5rem', lineHeight: '1.8' }}>
-            <li>Changes are auto-saved to your browser - no need to click save!</li>
-            <li>Update quantities quickly by clicking directly in the table</li>
-            <li>Export CSV to share with others or keep backups</li>
-            <li>Import CSV to bulk update many items at once</li>
-            <li>Use Undo button if you make a mistake (keeps last 10 changes)</li>
-            <li>Print button creates a clean printer-friendly list</li>
-          </ul>
-        </div>
       </div>
 
       <style jsx global>{`
