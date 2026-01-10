@@ -43,10 +43,10 @@ export default function AdminPage() {
   if (!isAuthenticated) {
     return (
       <main>
-        <div className="header">
-          <div className="container">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1rem' }}>
-              <div style={{ position: 'relative', width: '180px', height: '60px' }}>
+        <header className="header">
+          <div className="header-content">
+            <div className="header-brand">
+              <div style={{ position: 'relative', width: '180px', height: '48px' }}>
                 <Image
                   src="/images/lightningcath-logo.png"
                   alt="LightningCath Logo"
@@ -59,22 +59,22 @@ export default function AdminPage() {
                 />
               </div>
               <div>
-                <h1>Admin Portal</h1>
-                <p>Please log in to access the admin panel</p>
+                <h1 className="header-title">Admin Portal</h1>
+                <p className="header-subtitle">Please log in to access the admin panel</p>
               </div>
             </div>
           </div>
-        </div>
+        </header>
 
-        <div className="container">
-          <div style={{ marginBottom: '1.5rem' }}>
-            <Link href="/" className="button button-secondary">
+        <div className="container" style={{ paddingTop: '8rem' }}>
+          <div style={{ marginBottom: '3rem' }}>
+            <Link href="/" className="button button-ghost">
               ← Back to Stock Portal
             </Link>
           </div>
 
           <div className="card" style={{ maxWidth: '500px', margin: '0 auto' }}>
-            <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Admin Login</h2>
+            <h2 className="card-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>Admin Login</h2>
 
             <form onSubmit={handleLogin}>
               <div className="input-group">
@@ -90,19 +90,13 @@ export default function AdminPage() {
               </div>
 
               {error && (
-                <div style={{
-                  padding: '0.75rem',
-                  background: 'var(--color-error-bg)',
-                  color: 'var(--color-error-text)',
-                  borderRadius: '8px',
-                  marginBottom: '1rem'
-                }}>
+                <div className="alert alert-error">
                   {error}
                 </div>
               )}
 
-              <button type="submit" className="button" style={{ width: '100%' }}>
-                Log In
+              <button type="submit" className="button" style={{ width: '100%', marginTop: '1.5rem' }}>
+                🔓 Log In
               </button>
             </form>
           </div>
@@ -123,40 +117,38 @@ export default function AdminPage() {
 
   return (
     <main>
-      <div className="header">
-        <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: 1 }}>
-              <div style={{ position: 'relative', width: '180px', height: '60px' }}>
-                <Image
-                  src="/images/lightningcath-logo.png"
-                  alt="LightningCath Logo"
-                  fill
-                  style={{ objectFit: 'contain' }}
-                  priority
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              </div>
-              <div>
-                <h1>Admin Portal</h1>
-                <p>Manage your stock inventory and add new products</p>
-              </div>
+      <header className="header">
+        <div className="header-content">
+          <div className="header-brand">
+            <div style={{ position: 'relative', width: '180px', height: '48px' }}>
+              <Image
+                src="/images/lightningcath-logo.png"
+                alt="LightningCath Logo"
+                fill
+                style={{ objectFit: 'contain' }}
+                priority
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
-            <button
-              className="button button-secondary"
-              onClick={handleLogout}
-            >
-              🔒 Logout
-            </button>
+            <div>
+              <h1 className="header-title">Admin Portal</h1>
+              <p className="header-subtitle">Manage your stock inventory and add new products</p>
+            </div>
           </div>
+          <button
+            className="button button-secondary"
+            onClick={handleLogout}
+          >
+            🔒 Logout
+          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="container">
-        <div style={{ marginBottom: '1.5rem' }}>
-          <Link href="/" className="button button-secondary">
+      <div className="container" style={{ paddingTop: '8rem' }}>
+        <div style={{ marginBottom: '3rem' }}>
+          <Link href="/" className="button button-ghost">
             ← Back to Stock Portal
           </Link>
         </div>

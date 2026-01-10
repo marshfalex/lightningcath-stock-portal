@@ -91,39 +91,31 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [], on
 
   const getQuantityBadge = (quantity: number | string) => {
     if (quantity === "Coming Soon!") {
-      return <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>Coming Soon!</span>;
+      return <span className="badge badge-warning">Coming Soon!</span>;
     }
     const numQty = typeof quantity === 'number' ? quantity : parseInt(quantity as string);
     if (numQty === 0) {
-      return <span className="badge" style={{ background: '#fee2e2', color: '#991b1b' }}>Out of Stock</span>;
+      return <span className="badge badge-error">Out of Stock</span>;
     }
     if (numQty < 50) {
-      return <span className="badge" style={{ background: '#fed7aa', color: '#9a3412' }}>Low Stock ({numQty})</span>;
+      return <span className="badge badge-warning">Low Stock ({numQty})</span>;
     }
     return <span className="badge badge-success">In Stock ({numQty})</span>;
   };
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <h2 style={{ marginBottom: 0 }}>Stock List</h2>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <h2 className="card-title" style={{ marginBottom: 0 }}>Stock List</h2>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           {isUsingLiveData && (
-            <span style={{
-              fontSize: '0.75rem',
-              color: '#10b981',
-              background: '#d1fae5',
-              padding: '0.25rem 0.75rem',
-              borderRadius: '12px',
-              fontWeight: '500'
-            }}>
+            <span className="badge badge-success">
               ✓ Live Updates
             </span>
           )}
           <button
-            className="button button-secondary"
+            className="button button-ghost"
             onClick={loadStockData}
-            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
           >
             🔄 Refresh
           </button>
@@ -161,14 +153,14 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [], on
         </select>
       </div>
 
-      <div style={{ marginTop: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <span style={{ color: '#6b7280' }}>
+      <div style={{ marginTop: '2rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
           Showing {filteredStock.length} of {stockList.length} items
         </span>
         {onMaterialSelect && filteredStock.length > 0 && (
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button
-              className="button button-secondary"
+              className="button button-ghost"
               onClick={() => {
                 filteredStock.forEach(item => {
                   if (!isSelected(item)) {
@@ -176,12 +168,11 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [], on
                   }
                 });
               }}
-              style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
             >
               ✓ Select All ({filteredStock.length})
             </button>
             <button
-              className="button button-secondary"
+              className="button button-ghost"
               onClick={() => {
                 filteredStock.forEach(item => {
                   if (isSelected(item)) {
@@ -189,7 +180,6 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [], on
                   }
                 });
               }}
-              style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
               disabled={selectedMaterials.length === 0}
             >
               ✕ Deselect All
@@ -198,7 +188,7 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [], on
         )}
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
+      <div className="table-container">
         <table className="table">
           <thead>
             <tr>
@@ -220,9 +210,9 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [], on
             ) : (
               filteredStock.map((item) => (
                 <tr key={item.id}>
-                  <td style={{ fontSize: '0.875rem', color: '#6b7280' }}>{item.id}</td>
+                  <td style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>{item.id}</td>
                   <td>
-                    <span className="badge badge-primary">{item.category}</span>
+                    <span className="badge badge-info">{item.category}</span>
                   </td>
                   <td style={{ fontSize: '0.875rem' }}>{item.materialFamily}</td>
                   <td>{item.description}</td>
@@ -230,14 +220,9 @@ export default function StockList({ onMaterialSelect, selectedMaterials = [], on
                   {onMaterialSelect && (
                     <td>
                       <button
-                        className="button"
+                        className={isSelected(item) ? 'button button-secondary' : 'button'}
                         onClick={() => onMaterialSelect(item)}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          fontSize: '0.875rem',
-                          background: isSelected(item) ? '#dc2626' : '#3b82f6',
-                          minWidth: '100px'
-                        }}
+                        style={{ minWidth: '100px' }}
                       >
                         {isSelected(item) ? '✕ Remove' : '+ Add'}
                       </button>
