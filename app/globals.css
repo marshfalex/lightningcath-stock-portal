@@ -197,23 +197,24 @@ p {
   gap: 1rem;
 }
 
-.header h1 {
+.header-title {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  margin: 0;
 }
 
-.header p {
+.header-subtitle {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
   font-weight: 500;
+  margin: 0.25rem 0 0 0;
 }
 
-/* Glass Card Design */
+/* Glass Card Design - Optimized for Performance */
 .card {
   background: var(--color-bg-elevated);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border-radius: 16px;
   padding: 2.5rem;
   margin-bottom: 3rem;
@@ -232,7 +233,7 @@ p {
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: var(--color-text-primary);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .card-subtitle {
@@ -255,7 +256,7 @@ p {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   color: var(--color-text-tertiary);
   margin-bottom: 1.5rem;
 }
@@ -276,9 +277,14 @@ p {
 
 .input-field,
 select,
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
 textarea {
   width: 100%;
   padding: 0.875rem 1rem;
+  min-height: 48px;
   border: 1px solid var(--color-border);
   border-radius: 10px;
   font-size: 0.9375rem;
@@ -288,6 +294,10 @@ textarea {
   color: var(--color-text-primary);
   box-shadow: var(--shadow-inner);
   font-family: 'Inter', sans-serif;
+}
+
+textarea {
+  min-height: auto;
 }
 
 .input-field:focus,
@@ -340,6 +350,17 @@ textarea:focus {
   cursor: not-allowed;
   opacity: 0.5;
   transform: none;
+}
+
+/* Dark Mode Submit Button Glow */
+[data-theme="dark"] .button {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  box-shadow: var(--shadow-sm), 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="dark"] .button:hover {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  box-shadow: var(--shadow-md), 0 0 30px rgba(59, 130, 246, 0.5);
 }
 
 .button-secondary {
@@ -439,6 +460,13 @@ textarea:focus {
 .badge-error {
   background: var(--color-error-bg);
   color: var(--color-error-text);
+  font-weight: 700;
+}
+
+[data-theme="dark"] .badge-error {
+  color: #FCA5A5;
+  background: rgba(248, 113, 113, 0.2);
+  font-weight: 700;
 }
 
 .badge-info {
@@ -508,6 +536,9 @@ textarea:focus {
   background: var(--color-bg-input);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
 }
 
 .service-card:hover {
@@ -518,9 +549,14 @@ textarea:focus {
 }
 
 .service-card.selected {
-  border-color: var(--color-primary);
+  border-color: #2563EB;
   background: var(--color-info-bg);
-  box-shadow: var(--shadow-md), var(--glow-focus);
+  box-shadow: var(--shadow-md), 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+[data-theme="dark"] .service-card.selected {
+  border-color: #3B82F6;
+  box-shadow: var(--shadow-md), 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .service-card-checkbox {
@@ -717,4 +753,9 @@ textarea:focus {
     box-shadow: none;
     border: 1px solid #ddd;
   }
+}
+
+/* Virtualized Table Row Styles */
+.table-row-virtual:hover {
+  background: var(--color-bg-input);
 }

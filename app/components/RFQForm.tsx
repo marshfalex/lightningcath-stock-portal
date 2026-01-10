@@ -292,15 +292,14 @@ export default function RFQForm({ selectedMaterials }: RFQFormProps) {
               className={`service-card ${selectedServiceIds.includes(service.id) ? 'selected' : ''}`}
               onClick={() => handleServiceToggle(service.id)}
             >
-              <div className="service-card-header">
-                <input
-                  type="checkbox"
-                  checked={selectedServiceIds.includes(service.id)}
-                  onChange={() => handleServiceToggle(service.id)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <strong>{service.name}</strong>
-              </div>
+              <input
+                type="checkbox"
+                className="service-card-checkbox"
+                checked={selectedServiceIds.includes(service.id)}
+                onChange={() => handleServiceToggle(service.id)}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <h4 className="service-card-title">{service.name}</h4>
               <p className="service-card-description">
                 {service.description}
               </p>
